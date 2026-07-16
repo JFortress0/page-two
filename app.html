@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Page Two — Digital Footprint Audit</title>
+  <meta name="description" content="Audit your search results, follow your SEO action plan, and monitor page one with Reputation Shield." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🛡️</text></svg>" />
+</head>
+<body class="app-body">
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="brand" href="index.html">Page&nbsp;<span class="two">Two</span><span class="brand-sub">Educator Reputation</span></a>
+      <div class="nav-links">
+        <a href="index.html">← Back to overview</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="app-main">
+    <div class="container">
+
+      <div class="app-tabs" role="tablist">
+        <button class="app-tab active" data-view="audit" id="tab-audit"><span class="tab-num">1</span>Footprint Audit</button>
+        <button class="app-tab" data-view="plan" id="tab-plan"><span class="tab-num">2</span>SEO Action Plan</button>
+        <button class="app-tab" data-view="dashboard" id="tab-dashboard"><span class="tab-num">3</span>Reputation Shield</button>
+      </div>
+
+      <div class="sim-banner">⚑&nbsp; Demo environment — all names, results, and rankings are fictional simulations for product demonstration.</div>
+
+      <!-- ============================= AUDIT ============================= -->
+      <div id="view-audit">
+        <div class="panel">
+          <h2>Digital Footprint Audit</h2>
+          <p class="panel-sub">See what actually ranks when someone googles your name. We scan your name plus your school or district and score your exposure.</p>
+          <form class="audit-form" id="audit-form">
+            <div class="field">
+              <label for="audit-name">Your full name</label>
+              <input type="text" id="audit-name" placeholder="e.g. Marlowe Okafor-Quist" autocomplete="off" required />
+            </div>
+            <div class="field">
+              <label for="audit-district">School or district</label>
+              <input type="text" id="audit-district" placeholder="e.g. Baldwin County Public Schools" autocomplete="off" />
+            </div>
+            <button type="submit" class="btn btn-gold" id="audit-go">Scan my results</button>
+          </form>
+          <p class="hint">Not sure what to type? <button type="button" id="load-sample">Load the sample educator</button> to see a full audit.</p>
+        </div>
+
+        <div class="panel hidden" id="scan-panel">
+          <div class="scanner">
+            <div class="scan-ring"></div>
+            <div class="scan-status" id="scan-status">Contacting search index…</div>
+            <div class="scan-log" id="scan-log"></div>
+          </div>
+        </div>
+
+        <div id="audit-results" class="hidden">
+          <div class="panel fade-in">
+            <div class="score-wrap">
+              <div class="score-dial">
+                <svg width="200" height="200" viewBox="0 0 200 200">
+                  <circle cx="100" cy="100" r="86" fill="none" stroke="#eef2f9" stroke-width="16"/>
+                  <circle id="score-arc" cx="100" cy="100" r="86" fill="none" stroke="#c0392b" stroke-width="16"
+                          stroke-linecap="round" stroke-dasharray="540" stroke-dashoffset="540"/>
+                </svg>
+                <div class="score-num">
+                  <div class="n" id="score-n">0</div>
+                  <div class="d">Risk score</div>
+                </div>
+              </div>
+              <div>
+                <span class="badge badge-danger" id="score-badge">High Exposure</span>
+                <div class="score-verdict" id="score-verdict" style="margin-top:10px;"></div>
+                <p class="score-detail" id="score-summary"></p>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel fade-in">
+            <h2 style="font-size:1.25rem;">Page one, right now <span class="badge badge-neutral" style="vertical-align:middle; margin-left:8px;">Top 10 results</span></h2>
+            <p class="panel-sub">What a parent, principal, or hiring committee sees first.</p>
+            <div id="serp-list"></div>
+            <div style="margin-top:28px; text-align:center;">
+              <button class="btn btn-gold btn-lg" id="to-plan">Generate my action plan →</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================= PLAN ============================= -->
+      <div id="view-plan" class="hidden">
+        <div class="panel">
+          <h2>SEO Action Plan</h2>
+          <p class="panel-sub" id="plan-sub">A step-by-step campaign to take over page one for <strong>Marlowe Okafor-Quist</strong> — built from the audit findings.</p>
+          <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:8px;">
+            <span class="badge badge-ok">2 steps complete</span>
+            <span class="badge badge-gold">2 in progress</span>
+            <span class="badge badge-neutral">2 upcoming</span>
+          </div>
+          <div id="plan-list"></div>
+          <div style="margin-top:28px; text-align:center;">
+            <button class="btn btn-gold btn-lg" id="to-dash">See the campaign working →</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- =========================== DASHBOARD =========================== -->
+      <div id="view-dashboard" class="hidden">
+        <div class="dash-grid">
+          <div class="kpi">
+            <div class="kpi-label">Risk score</div>
+            <div class="kpi-val" id="kpi-risk">82</div>
+            <div class="kpi-delta" id="kpi-risk-delta"></div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-label">Negative links on page 1</div>
+            <div class="kpi-val" id="kpi-neg">7</div>
+            <div class="kpi-delta" id="kpi-neg-delta"></div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-label">Owned assets on page 1</div>
+            <div class="kpi-val" id="kpi-own">0</div>
+            <div class="kpi-delta" id="kpi-own-delta"></div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-label">Highest lawsuit link</div>
+            <div class="kpi-val" id="kpi-high">#1</div>
+            <div class="kpi-delta" id="kpi-high-delta"></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h2 style="font-size:1.25rem;">Campaign timeline — watch page one change hands</h2>
+          <p class="panel-sub">Drag the timeline to see how owned assets rise and lawsuit coverage sinks over a six-month Shield campaign.</p>
+          <div class="timeline-controls">
+            <span class="month-label" id="month-label">Baseline</span>
+            <input type="range" id="month-slider" min="0" max="6" value="0" step="1" aria-label="Campaign month" />
+            <button class="btn btn-navy" id="play-sim" style="padding:10px 22px;">▶ Play 6 months</button>
+          </div>
+          <div class="rank-track" id="rank-track"></div>
+        </div>
+
+        <div class="panel">
+          <h2 style="font-size:1.25rem;">Shield alerts</h2>
+          <p class="panel-sub">Reputation Shield watches your page one 24/7 and tells you the moment anything changes.</p>
+          <div id="alert-list"></div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <footer>
+    <div class="container">
+      <div class="footer-inner">
+        <a class="brand" href="index.html" style="font-size:1.1rem;">Page&nbsp;<span class="two">Two</span></a>
+        <div><a href="index.html#tiers">Plans</a></div>
+      </div>
+      <p class="demo-note">
+        Working prototype for demonstration purposes. All names, schools, search results, and case
+        details are fictional. Rankings shown are simulated projections, not guarantees.
+      </p>
+    </div>
+  </footer>
+
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
