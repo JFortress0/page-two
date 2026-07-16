@@ -8,8 +8,9 @@
    ========================================================================== */
 
 const CONFIG = {
-  dataSource: "demo",          // "demo" | "serp-api"
-  serpApiEndpoint: "/.netlify/functions/serp-audit", // stub for future live integration
+  /* Live scans hit the Netlify Function below (Google Custom Search JSON API).
+     The sample educator always renders the curated demo persona. */
+  serpApiEndpoint: "/api/serp-audit",
 };
 
 /* Demo persona: a distinctive-named Alabama educator who WON a wrongful

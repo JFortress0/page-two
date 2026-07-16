@@ -31,7 +31,7 @@
         <button class="app-tab" data-view="dashboard" id="tab-dashboard"><span class="tab-num">3</span>Reputation Shield</button>
       </div>
 
-      <div class="sim-banner">⚑&nbsp; Demo environment — all names, results, and rankings are fictional simulations for product demonstration.</div>
+      <div class="sim-banner">⚑&nbsp; Prototype — the sample educator, Action Plan, and Shield dashboard are fictional simulations. Audits of other names use live Google results where available.</div>
 
       <!-- ============================= AUDIT ============================= -->
       <div id="view-audit">
@@ -61,6 +61,7 @@
         </div>
 
         <div id="audit-results" class="hidden">
+          <div class="sim-banner hidden" id="scan-notice"></div>
           <div class="panel fade-in">
             <div class="score-wrap">
               <div class="score-dial">
@@ -76,6 +77,7 @@
               </div>
               <div>
                 <span class="badge badge-danger" id="score-badge">High Exposure</span>
+                <span class="badge badge-gold" id="live-badge">Simulated demo data</span>
                 <div class="score-verdict" id="score-verdict" style="margin-top:10px;"></div>
                 <p class="score-detail" id="score-summary"></p>
               </div>
@@ -163,8 +165,10 @@
         <div><a href="index.html#tiers">Plans</a></div>
       </div>
       <p class="demo-note">
-        Working prototype for demonstration purposes. All names, schools, search results, and case
-        details are fictional. Rankings shown are simulated projections, not guarantees.
+        Working prototype for demonstration purposes. The sample educator, Action Plan, and Shield
+        dashboard are fictional simulations; live audits query Google's Custom Search index, which
+        approximates — but may not exactly match — personalized search rankings. Simulated
+        projections are not guarantees.
       </p>
     </div>
   </footer>

@@ -52,6 +52,7 @@
     e.preventDefault();
     const name = nameInput.value.trim() || DEMO_PERSONA.name;
     const district = districtInput.value.trim() || DEMO_PERSONA.district;
+    const isSample = name.toLowerCase() === DEMO_PERSONA.name.toLowerCase();
 
     resultsWrap.classList.add("hidden");
     scanPanel.classList.remove("hidden");
@@ -60,6 +61,40 @@
     const statusEl = document.getElementById("scan-status");
     const logEl = document.getElementById("scan-log");
     let i = 0;
+    let liveResult = null;
+    let liveSettled = isSample; // sample persona never hits the API
+
+    if (!isSample) {
+      fetch(CONFIG.serpApiEndpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: name, district: district }),
+      })
+        .then((r) => r.json())
+        .then((d) => { liveResult = d; liveSettled = true; })
+        .catch(() => { liveResult = { ok: false, reason: "network" }; liveSettled = true; });
+    }
+
+    function finish() {
+      scanPanel.classList.add("hidden");
+      if (isSample) {
+        renderAudit(name, DEMO_PERSONA, { live: false, notice: null });
+      } else if (liveResult && liveResult.ok) {
+        renderAudit(name, liveResult, { live: true, notice: null });
+      } else {
+        const reason = liveResult ? liveResult.reason : "network";
+        const notices = {
+          "not-configured":
+            "Live search isn't connected yet — showing the sample educator instead. (Admin: set GOOGLE_CSE_KEY and GOOGLE_CSE_CX in Netlify.)",
+          "quota-exhausted":
+            "Today's free live-search quota is used up — showing the sample educator instead. Live scans reset at midnight Pacific.",
+          "upstream-error": "The search service had a hiccup — showing the sample educator instead.",
+          "bad-request": "That name looks too short to scan — showing the sample educator instead.",
+          network: "Couldn't reach the scan service — showing the sample educator instead.",
+        };
+        renderAudit(DEMO_PERSONA.name, DEMO_PERSONA, { live: false, notice: notices[reason] || notices.network });
+      }
+    }
 
     function step() {
       if (i < SCAN_STEPS.length) {
@@ -69,40 +104,80 @@
           .replace("{district}", district);
         i++;
         setTimeout(step, 650);
+      } else if (!liveSettled) {
+        statusEl.textContent = "Waiting on Google’s index…";
+        setTimeout(step, 300);
       } else {
-        scanPanel.classList.add("hidden");
-        renderAudit(name);
+        finish();
       }
     }
     step();
   });
 
-  function renderAudit(queriedName) {
-    /* Demo mode always returns the sample persona's data; a live build would
-       call CONFIG.serpApiEndpoint here instead. */
-    const p = DEMO_PERSONA;
+  function renderAudit(queriedName, p, opts) {
+    opts = opts || { live: false, notice: null };
+
+    const badge = document.getElementById("score-badge");
+    const v = p.riskVerdict || "High Exposure";
+    badge.textContent = v;
+    badge.className =
+      "badge " + (p.riskScore >= 60 ? "badge-danger" : p.riskScore >= 30 ? "badge-warn" : "badge-ok");
+
+    const liveBadge = document.getElementById("live-badge");
+    liveBadge.textContent = opts.live ? "● Live Google results" : "Simulated demo data";
+    liveBadge.className = "badge " + (opts.live ? "badge-ok" : "badge-gold");
+
+    const noticeEl = document.getElementById("scan-notice");
+    if (opts.notice) {
+      noticeEl.textContent = "⚑ " + opts.notice;
+      noticeEl.classList.remove("hidden");
+    } else {
+      noticeEl.classList.add("hidden");
+    }
 
     document.getElementById("score-verdict").textContent =
-      "Searching “" + (queriedName || p.name) + "” — " + p.riskVerdict;
+      "Searching “" + (queriedName || p.name) + "” — " + v;
     document.getElementById("score-summary").textContent = p.riskSummary;
 
     // SERP list
     const list = document.getElementById("serp-list");
     list.innerHTML = "";
-    p.serpResults.forEach((r) => {
+    const rows = p.serpResults || p.results || [];
+    rows.forEach((r) => {
       const row = document.createElement("div");
       row.className =
         "result-row " + (r.type === "negative" ? "bad" : r.type === "positive" ? "good" : "");
       const badgeClass =
         r.type === "negative" ? "badge-danger" : r.type === "positive" ? "badge-ok" : "badge-neutral";
-      row.innerHTML =
-        '<div class="result-pos">' + r.pos + "</div>" +
-        "<div>" +
-        '<div class="result-url">' + r.url + "</div>" +
-        '<div class="result-title">' + r.title + "</div>" +
-        '<div class="result-snip">' + r.snippet + "</div>" +
-        "</div>" +
-        '<div class="result-tag"><span class="badge ' + badgeClass + '">' + r.tag + "</span></div>";
+      const posCell = document.createElement("div");
+      posCell.className = "result-pos";
+      posCell.textContent = r.pos;
+      const main = document.createElement("div");
+      const urlEl = document.createElement("div");
+      urlEl.className = "result-url";
+      urlEl.textContent = r.url;
+      const titleEl = document.createElement("div");
+      titleEl.className = "result-title";
+      if (r.link) {
+        const a = document.createElement("a");
+        a.href = r.link;
+        a.target = "_blank";
+        a.rel = "noopener noreferrer";
+        a.style.color = "inherit";
+        a.textContent = r.title;
+        titleEl.appendChild(a);
+      } else {
+        titleEl.textContent = r.title;
+      }
+      const snipEl = document.createElement("div");
+      snipEl.className = "result-snip";
+      snipEl.textContent = r.snippet;
+      main.append(urlEl, titleEl, snipEl);
+      const tagCell = document.createElement("div");
+      tagCell.className = "result-tag";
+      tagCell.innerHTML = '<span class="badge ' + badgeClass + '"></span>';
+      tagCell.firstChild.textContent = r.tag;
+      row.append(posCell, main, tagCell);
       list.appendChild(row);
     });
 
@@ -113,6 +188,9 @@
     const arc = document.getElementById("score-arc");
     const nEl = document.getElementById("score-n");
     const target = p.riskScore;
+    const scoreColor = target >= 60 ? "#c0392b" : target >= 30 ? "#b9770e" : "#1e7e4e";
+    arc.setAttribute("stroke", scoreColor);
+    nEl.style.color = scoreColor;
     const circumference = 2 * Math.PI * 86;
     arc.setAttribute("stroke-dasharray", circumference);
     let cur = 0;
