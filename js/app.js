@@ -192,7 +192,7 @@
     const risk = Math.max(8, Math.round(82 - (82 - 8) * (m / 6)));
 
     setKpi("kpi-risk", risk, m, 82, true);
-    setKpi("kpi-neg", negOn1, m, 7, true);
+    setKpi("kpi-neg", negOn1, m, 5, true);
     setKpi("kpi-own", ownOn1, m, 0, false);
     document.getElementById("kpi-high").textContent = highestNeg > 10 ? "Page " + Math.ceil(highestNeg / 10) : "#" + highestNeg;
     document.getElementById("kpi-high-delta").innerHTML =
