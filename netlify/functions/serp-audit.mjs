@@ -1,12 +1,14 @@
 /* ==========================================================================
    Page Two — Live Digital Footprint Audit
-   Netlify Function backed by Google's Custom Search JSON API.
+   Netlify Function with a pluggable SERP provider adapter.
 
    Env vars (set in Netlify, never exposed to the browser):
-     GOOGLE_CSE_KEY — API key for the Custom Search JSON API
-     GOOGLE_CSE_CX  — Programmable Search Engine ID (configured to search the web)
+     SERP_PROVIDER — "serper" (default) | "serpapi"
+     SERP_API_KEY  — API key for the chosen provider
 
-   Free tier: 100 queries/day, hard-capped by Google (no billing = no charges).
+   Providers:
+     serper  — google.serper.dev, 2,500 free trial queries, real Google SERP
+     serpapi — serpapi.com, 100 free queries/month, drop-in fallback
    ========================================================================== */
 
 const NEGATIVE_TERMS = [
@@ -104,12 +106,42 @@ function summarize(results, score, name) {
   return parts.join(" ");
 }
 
+/* ---------- provider adapters: each returns [{title, link, snippet}] ---------- */
+
+async function searchSerper(key, q) {
+  const res = await fetch("https://google.serper.dev/search", {
+    method: "POST",
+    headers: { "X-API-KEY": key, "Content-Type": "application/json" },
+    body: JSON.stringify({ q, num: 10 }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const quota = res.status === 429 || res.status === 403;
+    throw { reason: quota ? "quota-exhausted" : "upstream-error", detail: data?.message };
+  }
+  return (data.organic || []).map((it) => ({ title: it.title, link: it.link, snippet: it.snippet }));
+}
+
+async function searchSerpApi(key, q) {
+  const url =
+    "https://serpapi.com/search.json?engine=google&num=10&api_key=" + encodeURIComponent(key) +
+    "&q=" + encodeURIComponent(q);
+  const res = await fetch(url);
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || data.error) {
+    const msg = String(data.error || "");
+    const quota = res.status === 429 || /run out|limit/i.test(msg);
+    throw { reason: quota ? "quota-exhausted" : "upstream-error", detail: msg };
+  }
+  return (data.organic_results || []).map((it) => ({ title: it.title, link: it.link, snippet: it.snippet }));
+}
+
 export default async (req) => {
   const headers = { "Content-Type": "application/json", "Cache-Control": "no-store" };
 
-  const KEY = process.env.GOOGLE_CSE_KEY;
-  const CX = process.env.GOOGLE_CSE_CX;
-  if (!KEY || !CX) {
+  const KEY = process.env.SERP_API_KEY;
+  const PROVIDER = (process.env.SERP_PROVIDER || "serper").toLowerCase();
+  if (!KEY) {
     return new Response(JSON.stringify({ ok: false, reason: "not-configured" }), { status: 200, headers });
   }
 
@@ -126,29 +158,20 @@ export default async (req) => {
   }
 
   const q = district ? `"${name}" ${district}` : `"${name}"`;
-  const url =
-    "https://www.googleapis.com/customsearch/v1?key=" + encodeURIComponent(KEY) +
-    "&cx=" + encodeURIComponent(CX) +
-    "&num=10&q=" + encodeURIComponent(q);
 
-  let data;
+  let items;
   try {
-    const res = await fetch(url);
-    data = await res.json();
-    if (!res.ok) {
-      const reason = res.status === 429 || data?.error?.errors?.[0]?.reason === "dailyLimitExceeded"
-        ? "quota-exhausted"
-        : "upstream-error";
-      return new Response(JSON.stringify({ ok: false, reason, detail: data?.error?.message }), { status: 200, headers });
-    }
+    items = PROVIDER === "serpapi" ? await searchSerpApi(KEY, q) : await searchSerper(KEY, q);
   } catch (e) {
-    return new Response(JSON.stringify({ ok: false, reason: "upstream-error" }), { status: 200, headers });
+    return new Response(
+      JSON.stringify({ ok: false, reason: e.reason || "upstream-error", detail: e.detail }),
+      { status: 200, headers }
+    );
   }
 
-  const items = (data.items || []).slice(0, 10);
-  const results = items.map((item, i) => {
+  const results = items.slice(0, 10).map((item, i) => {
     const c = classify(item, name);
-    let displayUrl = item.displayLink || item.link;
+    let displayUrl = item.link;
     try {
       const u = new URL(item.link);
       const pathBits = u.pathname.split("/").filter(Boolean).slice(0, 2).join(" › ");
@@ -170,7 +193,7 @@ export default async (req) => {
     JSON.stringify({
       ok: true,
       query: q,
-      totalResults: data.searchInformation?.totalResults ?? null,
+      provider: PROVIDER,
       results,
       riskScore: score,
       riskVerdict: verdict(score),

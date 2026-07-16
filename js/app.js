@@ -85,9 +85,9 @@
         const reason = liveResult ? liveResult.reason : "network";
         const notices = {
           "not-configured":
-            "Live search isn't connected yet — showing the sample educator instead. (Admin: set GOOGLE_CSE_KEY and GOOGLE_CSE_CX in Netlify.)",
+            "Live search isn't connected yet — showing the sample educator instead. (Admin: set SERP_API_KEY in Netlify.)",
           "quota-exhausted":
-            "Today's free live-search quota is used up — showing the sample educator instead. Live scans reset at midnight Pacific.",
+            "The live-search quota is used up — showing the sample educator instead.",
           "upstream-error": "The search service had a hiccup — showing the sample educator instead.",
           "bad-request": "That name looks too short to scan — showing the sample educator instead.",
           network: "Couldn't reach the scan service — showing the sample educator instead.",
